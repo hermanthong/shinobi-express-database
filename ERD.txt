@@ -3,9 +3,13 @@
 [Customers](cid*, cname, cgender, mobile_number);
 [Delivery_Requests](drid*, pickup_addr, pickup_postal_code, recipient_name, recipient_addr, recipient_postal_code);
 [[Packages]](pid*, dimensions(height, width, depth), weight, description, value);
-[[Legs]](lid*, src, dest, eid, start_time, end_time);
-[Delivery_Process](dpid*);
-[Pickups](puid*);
+[[Legs]](src, dest, eid, start_time, end_time);
+[Delivery_Processes]();
+[Pickups](, timestamp, eid);
+
+[Successful_Pickups]();
+[Unsuccessful_Pickups](reason);
+Pickups ==> {Successful_Pickups, Unsuccessful_Pickups};
 
 [Accepted_Requests](cc_num, timestamp, status);
 [Withdrawn_Requests]();
@@ -17,6 +21,12 @@ Employees --> {Delivery_Personnels};
 [First_Legs](dimensions(height, width, depth), weight);
 [Last_Legs]();
 Legs --- {First_Legs, Last_Legs};
+
+[Unsuccessful_Deliveries](timestamp, reason, count);
+Last_Legs --- {Unsuccessful_Deliveries};
+
+[Return_Delivery_Processes]();
+Delivery_Processes --- {Return_Delivery_Processes};
 
 <Stores>();
 Facilities --- Stores;
@@ -48,28 +58,41 @@ Accepted_Requests ==> Pays;
 
 <Monitors>();
 Employees --- Monitors;
-Accepted_Requests ==> Monitors;
+Delivery_Processes ==> Monitors;
 
-<<Consists>>();
-Accepted_Requests === Consists;
-Legs ==> Consists;
+<Has>();
+Accepted_Requests ==> Has;
+Delivery_Processes ==> Has;
+
+<Starts>();
+Pickups ==> Starts;
+Delivery_Processes ==> Starts;
+
+<Does>();
+Delivery_Personnels ==> Does;
+Pickups ==> Does;
+
+<Initiates>();
+Successful_Pickups ==> Initiates;
+Legs --> Initiates;
+
+<Keeps>();
+Unsuccessful_Deliveries --- Keeps;
+Facilities --- Keeps;
 
 <Handles>();
-Delivery_Personnels ==> Handles;
-Legs ==> Handles;
+Delivery_Personnels --- Handles;
+Legs --- Handles;
 
-<Updates_Measurements>();
-Accepted_Requests --- Updates_Measurements;
-First_Legs --- Updates_Measurements;
+[<Terminates>]();
+Delivery_Personnels --- Terminates;
+First_Legs --- Terminates;
+Terminates --- Submits;
 
-<Updates_Status>();
-Accepted_Requests --- Updates_Status;
-Last_Legs --- Updates_Status;
+<Refunds>();
+Customers --- Refunds;
+Terminates --- Refunds;
 
-<Drops_Off>();
-Legs --> Drops_Off;
-Facilities --- Drops_Off;
-
-<Processes>(acceptable, price, tentative_pickup_date, days_required);
-Delivery_Requests ==> Processes;
-Employees --> Processes;
+<Cancels>(timestamp);
+Customers --- Cancels;
+Return_Delivery_Processes --- Cancels;
