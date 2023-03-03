@@ -1,0 +1,75 @@
+[Employees](eid*, ename, egender, dob, title, salary);
+[Facilities](fid*, addr, postal_code);
+[Customers](cid*, cname, cgender, mobile_number);
+[Delivery_Requests](drid*, pickup_addr, pickup_postal_code, recipient_name, recipient_addr, recipient_postal_code);
+[[Packages]](pid*, dimensions(height, width, depth), weight, description, value);
+[[Legs]](lid*, src, dest, eid, start_time, end_time);
+[Delivery_Process](dpid*);
+[Pickups](puid*);
+
+[Accepted_Requests](cc_num, timestamp, status);
+[Withdrawn_Requests]();
+Delivery_Requests --> {Accepted_Requests, Withdrawn_Requests};
+
+[Delivery_Personnels]();
+Employees --> {Delivery_Personnels};
+
+[First_Legs](dimensions(height, width, depth), weight);
+[Last_Legs]();
+Legs --- {First_Legs, Last_Legs};
+
+<Stores>();
+Facilities --- Stores;
+Packages --- Stores;
+
+<Submits>();
+Customers --- Submits;
+Delivery_Requests ==> Submits;
+
+<<Involves>>();
+Packages ==> Involves;
+Delivery_Requests === Involves;
+
+[<Evaluates>]();
+Employees --- Evaluates;
+Delivery_Requests ==> Evaluates;
+
+<Informs>();
+Evaluates --- Informs;
+Customers --- Informs;
+
+[<Proceeds>]();
+Customers --- Proceeds;
+Delivery_Requests --> Proceeds;
+
+<Pays>();
+Proceeds --- Pays;
+Accepted_Requests ==> Pays;
+
+<Monitors>();
+Employees --- Monitors;
+Accepted_Requests ==> Monitors;
+
+<<Consists>>();
+Accepted_Requests === Consists;
+Legs ==> Consists;
+
+<Handles>();
+Delivery_Personnels ==> Handles;
+Legs ==> Handles;
+
+<Updates_Measurements>();
+Accepted_Requests --- Updates_Measurements;
+First_Legs --- Updates_Measurements;
+
+<Updates_Status>();
+Accepted_Requests --- Updates_Status;
+Last_Legs --- Updates_Status;
+
+<Drops_Off>();
+Legs --> Drops_Off;
+Facilities --- Drops_Off;
+
+<Processes>(acceptable, price, tentative_pickup_date, days_required);
+Delivery_Requests ==> Processes;
+Employees --> Processes;
