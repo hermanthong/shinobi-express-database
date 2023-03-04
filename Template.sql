@@ -1,71 +1,69 @@
 CREATE TABLE Employees (
-  eid     INT PRIMARY KEY,
-  ename   VARCHAR(200),
-  egender VARCHAR(20),
-  dob     DATE,
-  title   VARCHAR(200),
+  eid     INT,
+  ename   INT,
+  egender INT,
+  dob     INT,
+  title   INT,
   salary  INT
 );
 
 CREATE TABLE Facilities (
-  fid         INT PRIMARY KEY,
-  addr        VARCHAR(200),
+  fid         INT,
+  addr        INT,
   postal_code INT
 );
 
 CREATE TABLE Customers (
-  cid           INT PRIMARY KEY,
-  cname         VARCHAR(200),
-  cgender       VARCHAR(20),
+  cid           INT,
+  cname         INT,
+  cgender       INT,
   mobile_number INT
 );
 
 CREATE TABLE Delivery_Requests (
-  drid                  INT PRIMARY KEY,
-  pickup_addr           VARCHAR(200),
+  drid                  INT,
+  pickup_addr           INT,
   pickup_postal_code    INT,
-  recipient_name        VARCHAR(200),
-  recipient_addr        VARCHAR(200),
+  recipient_name        INT,
+  recipient_addr        INT,
   recipient_postal_code INT
 );
 
 CREATE TABLE Packages (
-  pid         INT PRIMARY KEY,
-  dimensions  INT, -- figure out the composite attributes (height FLOAT, width FLOAT, depth FLOAT)
-  weight      FLOAT,
-  description VARCHAR(200),
-  value       FLOAT
+  pid         INT,
+  dimensions  INT,
+  weight      INT,
+  description INT,
+  value       INT
 );
 
-CREATE TABLE Legs ( -- need to specify who it belongs to? eg legs of a delivery / delivery
-  src        INT, -- what if not fid, but an address tho. maybe worth creating a intermediate_legs table?
+CREATE TABLE Legs (
+  src        INT,
   dest       INT,
-  eid        INT,
-  start_time DATETIME,
-  end_time   DATETIME
+  start_time INT,
+  end_time   INT
 );
 
 CREATE TABLE Delivery_Processes (
-  -- lmao
+
 );
 
 CREATE TABLE Pickups (
-  timestamp INT,
-  eid       INT
-  PRIMARY KEY (timestamp, eid)
+  timestamp INT
 );
 
 CREATE TABLE Successful_Pickups (
+
 );
 
 CREATE TABLE Unsuccessful_Pickups (
-  reason VARCHAR(200)
+  reason INT
 );
 
 CREATE TABLE Accepted_Requests (
   cc_num    INT,
-  timestamp DATETIME,
-  status    VARACHAR(20)
+  timestamp INT,
+  status    INT
 );
 
 CREATE TABLE Withdrawn_Requests (
@@ -77,8 +75,8 @@ CREATE TABLE Delivery_Personnels (
 );
 
 CREATE TABLE First_Legs (
-  dimensions INT, -- figure out composite attributes
-  weight     FLOAT
+  dimensions INT,
+  weight     INT
 );
 
 CREATE TABLE Last_Legs (
@@ -86,8 +84,8 @@ CREATE TABLE Last_Legs (
 );
 
 CREATE TABLE Unsuccessful_Deliveries (
-  timestamp DATETIME,
-  reason    VARCHAR(200),
+  timestamp INT,
+  reason    INT,
   count     INT
 );
 
@@ -112,10 +110,6 @@ CREATE TABLE Evaluates (
 );
 
 CREATE TABLE Informs (
-
-);
-
-CREATE TABLE Proceeds (
 
 );
 

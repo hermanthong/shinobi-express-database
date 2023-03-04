@@ -3,9 +3,9 @@
 [Customers](cid*, cname, cgender, mobile_number);
 [Delivery_Requests](drid*, pickup_addr, pickup_postal_code, recipient_name, recipient_addr, recipient_postal_code);
 [[Packages]](pid*, dimensions(height, width, depth), weight, description, value);
-[[Legs]](src, dest, eid, start_time, end_time);
+[[Legs]](src, dest, start_time, end_time);
 [Delivery_Processes]();
-[Pickups](, timestamp, eid);
+[Pickups](timestamp);
 
 [Successful_Pickups]();
 [Unsuccessful_Pickups](reason);
@@ -48,12 +48,8 @@ Delivery_Requests ==> Evaluates;
 Evaluates --- Informs;
 Customers --- Informs;
 
-[<Proceeds>]();
-Customers --- Proceeds;
-Delivery_Requests --> Proceeds;
-
 <Pays>();
-Proceeds --- Pays;
+Customers --- Pays;
 Accepted_Requests ==> Pays;
 
 <Monitors>();
