@@ -39,74 +39,73 @@ CREATE TABLE Packages (
   value       NUMERIC CHECK (value >= 0)
 );
 
-CREATE TABLE Legs ( 
-  src        VARCHAR(200),
-  dest       VARCHAR(200),
-  start_time DATETIME,
-  end_time   DATETIME,
-  puid       INT
-    REFERENCES Successful_Pickups (puid),
-  PRIMARY KEY  (puid, start_time)
-);
-
 CREATE TABLE Pickups (
   puid      INT PRIMARY KEY,
-  timestamp DATETIME
+  timestamp TIME
 );
 
 CREATE TABLE Successful_Pickups (
-  puid      INT PRIMARY KEY
-    REFERENCES Pickups (puid) ON DELETE CASCADE
+  puid      INT PRIMARY KEY,
+  FOREIGN KEY (puid) REFERENCES Pickups (puid) ON DELETE CASCADE
+);
+
+CREATE TABLE Legs ( 
+  src        VARCHAR(200),
+  dest       VARCHAR(200),
+  start_time TIME,
+  end_time   TIME,
+  puid       INT,
+  FOREIGN KEY (puid) REFERENCES Successful_Pickups (puid),
+  PRIMARY KEY  (puid, start_time)
 );
 
 CREATE TABLE Unsuccessful_Pickups (
-  puid      INT PRIMARY KEY
-    REFERENCES Pickups (puid) ON DELETE CASCADE,
-  reason    VARCHAR(200)
+  puid      INT PRIMARY KEY,
+  reason    VARCHAR(200),
+  FOREIGN KEY (puid) REFERENCES Pickups (puid) ON DELETE CASCADE
 );
 
 CREATE TABLE Accepted_Requests (
-  drid      INT PRIMARY KEY
-    REFERENCES Delivery_Requests (drid) ON DELETE CASCADE,
+  drid      INT PRIMARY KEY,
+  FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid) ON DELETE CASCADE,
   cc_num    INT,
-  timestamp DATETIME,
+  timestamp TIME,
   status    VARCHAR(20)
 );
 
 CREATE TABLE Withdrawn_Requests (
-  drid      INT PRIMARY KEY
-    REFERENCES Delivery_Requests (drid) ON DELETE CASCADE
+  drid      INT PRIMARY KEY,
+  FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid) ON DELETE CASCADE
 );
 
 CREATE TABLE Delivery_Personnels (
-  eid     INT PRIMARY KEY
-    REFERENCES Employees (eid) ON DELETE CASCADE
+  eid     INT PRIMARY KEY,
+  FOREIGN KEY (eid) REFERENCES Employees (eid) ON DELETE CASCADE
 );
-
 CREATE TABLE First_Legs (
   dimensions INT,
   weight     INT,
   puid       INT,
-  start_time DATETIME,
-  PRIMARY KEY (puid, start_time)
-    REFERENCES Legs (puid, start_time) ON DELETE CASCADE
+  start_time TIME,
+  PRIMARY KEY (puid, start_time),
+  FOREIGN KEY (puid, start_time) REFERENCES Legs (puid, start_time) ON DELETE CASCADE
 );
 
 CREATE TABLE Last_Legs (
   puid       INT,
-  start_time DATETIME,
-  PRIMARY KEY (puid, start_time)
-    REFERENCES Legs (puid, start_time) ON DELETE CASCADE
+  start_time TIME,
+  PRIMARY KEY (puid, start_time),
+  FOREIGN KEY (puid, start_time) REFERENCES Legs (puid, start_time) ON DELETE CASCADE
 );
 
 CREATE TABLE Unsuccessful_Deliveries (
-  timestamp   DATETIME,
+  timestamp   TIME,
   reason      VARCHAR(200),
-  count       INT,
+  count       INT CHECK (count >= 0 AND count <=3),
   puid        INT,
-  start_time  DATETIME,
-  PRIMARY KEY (puid, start_time)
-    REFERENCES Last_Legs (puid, start_time) ON DELETE CASCADE
+  start_time  TIME,
+  PRIMARY KEY (puid, start_time),
+  FOREIGN KEY (puid, start_time) REFERENCES Last_Legs (puid, start_time) ON DELETE CASCADE
 );
 
 CREATE TABLE Return_Delivery_Processes (
@@ -176,7 +175,7 @@ CREATE TABLE Does (
 
 CREATE TABLE Keeps (
   puid        INT,
-  start_time  DATETIME,
+  start_time  TIME,
   fid         INT,
   FOREIGN KEY (puid, start_time) REFERENCES Last_Legs (puid, start_time),
   FOREIGN KEY (fid) REFERENCES Facilities (fid)
@@ -185,7 +184,7 @@ CREATE TABLE Keeps (
 CREATE TABLE Handles (
   eid         INT,
   puid        INT,
-  start_time  DATETIME,
+  start_time  TIME,
   FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
   FOREIGN KEY (puid, start_time) REFERENCES Legs (puid, start_time)
 );
@@ -193,7 +192,7 @@ CREATE TABLE Handles (
 CREATE TABLE Terminates (
   eid         INT,
   puid        INT,
-  start_time  DATETIME,
+  start_time  TIME,
   drid        INT,
   cid         INT,
   FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
@@ -204,8 +203,9 @@ CREATE TABLE Terminates (
 CREATE TABLE Cancels (
   cid         INT,
   drid        INT,
-  timestamp   DATETIME,
+  timestamp   TIME,
   FOREIGN KEY (cid) REFERENCES Customers (cid),
   FOREIGN KEY (drid) REFERENCES Return_Delivery_Processes (drid)
 );
+
 
