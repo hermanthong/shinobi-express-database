@@ -85,10 +85,6 @@ Delivery_Personnels --- Terminates;
 First_Legs --- Terminates;
 Terminates --- Submits;
 
-<Refunds>();
-Customers --- Refunds;
-Terminates --- Refunds;
-
 <Cancels>(timestamp);
 Customers --- Cancels;
 Return_Delivery_Processes --- Cancels;

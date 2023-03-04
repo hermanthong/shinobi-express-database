@@ -122,17 +122,24 @@ CREATE TABLE Stores (
 );
 
 CREATE TABLE Submits (
+  drid INT,
+  cid  INT,
   FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid),
   FOREIGN KEY (cid) REFERENCES Customers (cid),
   PRIMARY KEY (drid, cid)
 );
 
 CREATE TABLE Involves (
+  drid INT,
+  pid  INT,
   FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid),
   FOREIGN KEY (pid) REFERENCES Packages (pid)
 );
 
 CREATE TABLE Evaluates (
+  drid INT,
+  eid  INT,
+  cid  INT,
   FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid),
   FOREIGN KEY (eid) REFERENCES Employees (eid),
   FOREIGN KEY (cid) REFERENCES Customers (cid)
@@ -140,51 +147,64 @@ CREATE TABLE Evaluates (
 
 
 CREATE TABLE Pays (
+  cid INT,
+  drid INT,
   FOREIGN KEY (cid) REFERENCES Customers (cid),
   FOREIGN KEY (drid) REFERENCES Accepted_Requests (drid)
 );
 
 CREATE TABLE Monitors (
+  eid INT,
+  drid INT,
   FOREIGN KEY (eid) REFERENCES Employees (eid),
   FOREIGN KEY (drid) REFERENCES Accepted_Requests (drid)
 );
 
 CREATE TABLE Starts (
+  puid      INT,
+  drid      INT,
   FOREIGN KEY (puid) REFERENCES Pickups (puid),
   FOREIGN KEY (drid) REFERENCES Accepted_Requests (drid)
 );
 
 CREATE TABLE Does (
+  eid INT,
+  puid INT,
   FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
   FOREIGN KEY (puid) REFERENCES Pickups (puid)
 );
 
 CREATE TABLE Keeps (
-  puid      INT,
-  start_time DATETIME,
+  puid        INT,
+  start_time  DATETIME,
+  fid         INT,
   FOREIGN KEY (puid, start_time) REFERENCES Last_Legs (puid, start_time),
   FOREIGN KEY (fid) REFERENCES Facilities (fid)
 );
 
 CREATE TABLE Handles (
+  eid         INT,
+  puid        INT,
+  start_time  DATETIME,
   FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
   FOREIGN KEY (puid, start_time) REFERENCES Legs (puid, start_time)
 );
 
 CREATE TABLE Terminates (
-  FOREIGN KEY (cid) REFERENCES Refunds (cid),
+  eid         INT,
+  puid        INT,
+  start_time  DATETIME,
+  drid        INT,
+  cid         INT,
   FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
   FOREIGN KEY (puid, start_time) REFERENCES First_Legs (puid, start_time),
   FOREIGN KEY (drid, cid) REFERENCES Submits (drid, cid)
 );
 
-CREATE TABLE Refunds (
-  cid INT PRIMARY KEY,
-  FOREIGN KEY (cid) REFERENCES Customers (cid)
-);
-
 CREATE TABLE Cancels (
-  timestamp DATETIME,
+  cid         INT,
+  drid        INT,
+  timestamp   DATETIME,
   FOREIGN KEY (cid) REFERENCES Customers (cid),
   FOREIGN KEY (drid) REFERENCES Return_Delivery_Processes (drid)
 );
