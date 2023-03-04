@@ -40,124 +40,152 @@ CREATE TABLE Packages (
 );
 
 CREATE TABLE Legs ( 
-  src        INT,
-  dest       INT,
+  src        VARCHAR(200),
+  dest       VARCHAR(200),
   start_time DATETIME,
-  end_time   DATETIME
-);
-
-CREATE TABLE Delivery_Processes (
-
+  end_time   DATETIME,
+  puid       INT
+    REFERENCES Successful_Pickups (puid),
+  PRIMARY KEY  (puid, start_time)
 );
 
 CREATE TABLE Pickups (
-  timestamp INT
+  puid      INT PRIMARY KEY,
+  timestamp DATETIME
 );
 
 CREATE TABLE Successful_Pickups (
-
+  puid      INT PRIMARY KEY
+    REFERENCES Pickups (puid) ON DELETE CASCADE
 );
 
 CREATE TABLE Unsuccessful_Pickups (
-  reason INT
+  puid      INT PRIMARY KEY
+    REFERENCES Pickups (puid) ON DELETE CASCADE,
+  reason    VARCHAR(200)
 );
 
 CREATE TABLE Accepted_Requests (
+  drid      INT PRIMARY KEY
+    REFERENCES Delivery_Requests (drid) ON DELETE CASCADE,
   cc_num    INT,
-  timestamp INT,
-  status    INT
+  timestamp DATETIME,
+  status    VARCHAR(20)
 );
 
 CREATE TABLE Withdrawn_Requests (
-
+  drid      INT PRIMARY KEY
+    REFERENCES Delivery_Requests (drid) ON DELETE CASCADE
 );
 
 CREATE TABLE Delivery_Personnels (
-
+  eid     INT PRIMARY KEY
+    REFERENCES Employees (eid) ON DELETE CASCADE
 );
 
 CREATE TABLE First_Legs (
   dimensions INT,
-  weight     INT
+  weight     INT,
+  puid       INT,
+  start_time DATETIME,
+  PRIMARY KEY (puid, start_time)
+    REFERENCES Legs (puid, start_time) ON DELETE CASCADE
 );
 
 CREATE TABLE Last_Legs (
-
+  puid       INT,
+  start_time DATETIME,
+  PRIMARY KEY (puid, start_time)
+    REFERENCES Legs (puid, start_time) ON DELETE CASCADE
 );
 
 CREATE TABLE Unsuccessful_Deliveries (
-  timestamp INT,
-  reason    INT,
-  count     INT
+  timestamp   DATETIME,
+  reason      VARCHAR(200),
+  count       INT,
+  puid        INT,
+  start_time  DATETIME,
+  PRIMARY KEY (puid, start_time)
+    REFERENCES Last_Legs (puid, start_time) ON DELETE CASCADE
 );
 
 CREATE TABLE Return_Delivery_Processes (
-
+  drid      INT PRIMARY KEY,
+  FOREIGN KEY (drid) REFERENCES Accepted_Requests (drid)
 );
 
 CREATE TABLE Stores (
-
+  fid INT,
+  pid INT,
+  FOREIGN KEY (fid) REFERENCES Facilities (fid),
+  FOREIGN KEY (pid) REFERENCES Packages (pid)
 );
 
 CREATE TABLE Submits (
-
+  FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid),
+  FOREIGN KEY (cid) REFERENCES Customers (cid),
+  PRIMARY KEY (drid, cid)
 );
 
 CREATE TABLE Involves (
-
+  FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid),
+  FOREIGN KEY (pid) REFERENCES Packages (pid)
 );
 
 CREATE TABLE Evaluates (
-
+  FOREIGN KEY (drid) REFERENCES Delivery_Requests (drid),
+  FOREIGN KEY (eid) REFERENCES Employees (eid),
+  FOREIGN KEY (cid) REFERENCES Customers (cid)
 );
 
-CREATE TABLE Informs (
-
-);
 
 CREATE TABLE Pays (
-
+  FOREIGN KEY (cid) REFERENCES Customers (cid),
+  FOREIGN KEY (drid) REFERENCES Accepted_Requests (drid)
 );
 
 CREATE TABLE Monitors (
-
-);
-
-CREATE TABLE Has (
-
+  FOREIGN KEY (eid) REFERENCES Employees (eid),
+  FOREIGN KEY (drid) REFERENCES Accepted_Requests (drid)
 );
 
 CREATE TABLE Starts (
-
+  FOREIGN KEY (puid) REFERENCES Pickups (puid),
+  FOREIGN KEY (drid) REFERENCES Accepted_Requests (drid)
 );
 
 CREATE TABLE Does (
-
-);
-
-CREATE TABLE Initiates (
-
+  FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
+  FOREIGN KEY (puid) REFERENCES Pickups (puid)
 );
 
 CREATE TABLE Keeps (
-
+  puid      INT,
+  start_time DATETIME,
+  FOREIGN KEY (puid, start_time) REFERENCES Last_Legs (puid, start_time),
+  FOREIGN KEY (fid) REFERENCES Facilities (fid)
 );
 
 CREATE TABLE Handles (
-  eid INT REFERENCES Employees
-  
-
+  FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
+  FOREIGN KEY (puid, start_time) REFERENCES Legs (puid, start_time)
 );
 
 CREATE TABLE Terminates (
-
+  FOREIGN KEY (cid) REFERENCES Refunds (cid),
+  FOREIGN KEY (eid) REFERENCES Delivery_Personnels (eid),
+  FOREIGN KEY (puid, start_time) REFERENCES First_Legs (puid, start_time),
+  FOREIGN KEY (drid, cid) REFERENCES Submits (drid, cid)
 );
 
 CREATE TABLE Refunds (
-
+  cid INT PRIMARY KEY,
+  FOREIGN KEY (cid) REFERENCES Customers (cid)
 );
 
 CREATE TABLE Cancels (
-  timestamp INT
+  timestamp DATETIME,
+  FOREIGN KEY (cid) REFERENCES Customers (cid),
+  FOREIGN KEY (drid) REFERENCES Return_Delivery_Processes (drid)
 );
 

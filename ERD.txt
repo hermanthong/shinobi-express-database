@@ -4,7 +4,6 @@
 [Delivery_Requests](drid*, pickup_addr, pickup_postal_code, recipient_name, recipient_addr, recipient_postal_code);
 [[Packages]](pid*, dimensions(height, width, depth), weight, description, value);
 [[Legs]](src, dest, start_time, end_time);
-[Delivery_Processes]();
 [Pickups](timestamp);
 
 [Successful_Pickups]();
@@ -25,8 +24,11 @@ Legs --- {First_Legs, Last_Legs};
 [Unsuccessful_Deliveries](timestamp, reason, count);
 Last_Legs --- {Unsuccessful_Deliveries};
 
-[Return_Delivery_Processes]();
-Delivery_Processes --- {Return_Delivery_Processes};
+[[Return_Delivery_Processes]]();
+
+<<Fails>>();
+Accepted_Requests --- Fails;
+Return_Delivery_Processes ==> Fails;
 
 <Stores>();
 Facilities --- Stores;
@@ -40,37 +42,35 @@ Delivery_Requests ==> Submits;
 Packages ==> Involves;
 Delivery_Requests === Involves;
 
-[<Evaluates>]();
+<Evaluates>();
 Employees --- Evaluates;
 Delivery_Requests ==> Evaluates;
+Customers --> Evaluates;
 
-<Informs>();
-Evaluates --- Informs;
-Customers --- Informs;
+
+[<Proceeds>]();
+Customers --- Proceeds;
+Delivery_Requests --> Proceeds;
 
 <Pays>();
-Customers --- Pays;
+Proceeds --- Pays;
 Accepted_Requests ==> Pays;
 
 <Monitors>();
 Employees --- Monitors;
-Delivery_Processes ==> Monitors;
-
-<Has>();
-Accepted_Requests ==> Has;
-Delivery_Processes ==> Has;
+Accepted_Requests ==> Monitors;
 
 <Starts>();
 Pickups ==> Starts;
-Delivery_Processes ==> Starts;
+Accepted_Requests ==> Starts;
 
 <Does>();
 Delivery_Personnels ==> Does;
 Pickups ==> Does;
 
-<Initiates>();
+<<Initiates>>();
 Successful_Pickups ==> Initiates;
-Legs --> Initiates;
+Legs ==> Initiates;
 
 <Keeps>();
 Unsuccessful_Deliveries --- Keeps;
