@@ -1,47 +1,49 @@
 CREATE TABLE Employees (
-  eid     INT,
-  ename   INT,
-  egender INT,
-  dob     INT,
-  title   INT,
+  eid     INT PRIMARY KEY,
+  ename   VARCHAR(200),
+  egender VARCHAR(20),
+  dob     DATE,
+  title   VARCHAR(200),
   salary  INT
 );
 
 CREATE TABLE Facilities (
-  fid         INT,
-  addr        INT,
+  fid         INT PRIMARY KEY,
+  addr        VARCHAR(200),
   postal_code INT
 );
 
 CREATE TABLE Customers (
-  cid           INT,
-  cname         INT,
-  cgender       INT,
+  cid           INT PRIMARY KEY,
+  cname         VARCHAR(200),
+  cgender       VARCHAR(20),
   mobile_number INT
 );
 
 CREATE TABLE Delivery_Requests (
-  drid                  INT,
-  pickup_addr           INT,
+  drid                  INT PRIMARY KEY,
+  pickup_addr           VARCHAR(200),
   pickup_postal_code    INT,
-  recipient_name        INT,
-  recipient_addr        INT,
+  recipient_name        VARCHAR(200),
+  recipient_addr        VARCHAR(200),
   recipient_postal_code INT
 );
 
 CREATE TABLE Packages (
-  pid         INT,
-  dimensions  INT,
-  weight      INT,
-  description INT,
-  value       INT
+  pid         INT PRIMARY KEY,
+  height      NUMERIC CHECK (height >=0), 
+  width       NUMERIC CHECK (width >=0),
+  depth       NUMERIC CHECK (depth >=0),
+  weight      NUMERIC CHECK (weight >=0),
+  description VARCHAR(200),
+  value       NUMERIC CHECK (value >= 0)
 );
 
-CREATE TABLE Legs (
+CREATE TABLE Legs ( 
   src        INT,
   dest       INT,
-  start_time INT,
-  end_time   INT
+  start_time DATETIME,
+  end_time   DATETIME
 );
 
 CREATE TABLE Delivery_Processes (
@@ -142,6 +144,8 @@ CREATE TABLE Keeps (
 );
 
 CREATE TABLE Handles (
+  eid INT REFERENCES Employees
+  
 
 );
 
