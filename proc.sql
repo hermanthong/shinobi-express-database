@@ -545,3 +545,27 @@ $$ LANGUAGE plpgsql;
 -- SELECT get_top_delivery_persons(3);
 
 -- 2.2.3
+CREATE FUNCTION get_top_connections(k INTEGER)
+RETURNS TABLE(source_facility_id INTEGER, destination_facility_id INTEGER) AS $$
+BEGIN
+    RETURN QUERY     
+    SELECT legs.source_facility, legs.destination_facility, 
+           COALESCE(legs_count, 0) + COALESCE(return_legs_count, 0) AS occurrences
+    FROM (
+      SELECT source_facility, destination_facility, COUNT(*) AS legs_count
+      FROM legs
+      WHERE source_facility IS NOT NULL AND destination_facility IS NOT NULL
+      GROUP BY source_facility, destination_facility
+    ) AS legs
+    FULL OUTER JOIN (
+      SELECT source_facility, destination_facility, COUNT(*) AS return_legs_count
+      FROM return_legs
+      WHERE source_facility IS NOT NULL AND destination_facility IS NOT NULL
+      GROUP BY source_facility, destination_facility
+    ) AS return_legs
+    ON legs.source_facility = return_legs.source_facility AND legs.destination_facility = return_legs.destination_facility
+    ORDER BY occurrences DESC, source_facility, destination_facility
+    LIMIT k;
+END;
+$$ LANGUAGE plpgsql;
+
