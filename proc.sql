@@ -528,27 +528,54 @@ $$ LANGUAGE plpgsql;
 -- to test
 -- SELECT get_top_delivery_persons(3);
 
+-- 1. put all legs in order: ascending accepted request, then ascending timestamp
+-- 2. gather all pairs of consecutive facility_id as source_facility id, destination_facility_id, and put in CTE
+-- 3. count the number of occurrences of each facility_id
+-- 4. order as specified and limit k
 -- 2.2.3
-CREATE FUNCTION get_top_connections(k INTEGER)
-RETURNS TABLE(source_facility_id INTEGER, destination_facility_id INTEGER) AS $$
+CREATE OR REPLACE FUNCTION get_top_connections(k INTEGER)
+RETURNS TABLE(source_facility INTEGER, destination_facility_id INTEGER) AS $$
 BEGIN
     RETURN QUERY     
-    SELECT legs.source_facility, legs.destination_facility, 
-           COALESCE(legs_count, 0) + COALESCE(return_legs_count, 0) AS occurrences
-    FROM (
-      SELECT source_facility, destination_facility, COUNT(*) AS legs_count
-      FROM legs
-      WHERE source_facility IS NOT NULL AND destination_facility IS NOT NULL
-      GROUP BY source_facility, destination_facility
-    ) AS legs
-    FULL OUTER JOIN (
-      SELECT source_facility, destination_facility, COUNT(*) AS return_legs_count
-      FROM return_legs
-      WHERE source_facility IS NOT NULL AND destination_facility IS NOT NULL
-      GROUP BY source_facility, destination_facility
-    ) AS return_legs
-    ON legs.source_facility = return_legs.source_facility AND legs.destination_facility = return_legs.destination_facility
-    ORDER BY occurrences DESC, source_facility, destination_facility
+    SELECT source_facility, destination_facility, sum(count) as count
+    FROM(
+        SELECT * 
+        FROM (
+            SELECT source_facility, destination_facility, COALESCE(count(*), 0) AS count
+            FROM (
+                SELECT source_facility, destination_facility
+                    FROM (
+                        SELECT
+                            lag(request_id) OVER (ORDER BY request_id, end_time) AS old_request_id, 
+                            request_id,
+                            lag(destination_facility) OVER (ORDER BY request_id, end_time) AS source_facility,
+                            destination_facility
+                        FROM legs
+                    ) AS consecutive_facilities
+                    WHERE old_request_id = request_id
+            ) AS leg_trajectory
+            GROUP BY source_facility, destination_facility
+        ) AS legs_sorted
+
+        UNION 
+        
+            SELECT source_facility, destination_facility, COALESCE(count(*), 0) AS count
+            FROM (
+                SELECT source_facility, destination_facility
+                    FROM (
+                        SELECT
+                            lag(request_id) OVER (ORDER BY request_id, end_time) AS old_request_id, 
+                            request_id,
+                            source_facility,
+                            lag(source_facility) OVER (ORDER BY request_id, end_time) AS destination_facility
+                        FROM return_legs
+                    ) AS consecutive_facilities
+                    WHERE old_request_id = request_id
+            ) AS return_leg_trajectory
+            GROUP BY source_facility, destination_facility
+        ) AS df
+    GROUP BY source_facility, destination_facility
+    ORDER BY count DESC, source_facility, destination_facility
     LIMIT k;
 END;
 $$ LANGUAGE plpgsql;
