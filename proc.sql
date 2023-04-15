@@ -4,7 +4,9 @@
 -- that the package's request id references should survive
 CREATE OR REPLACE FUNCTION trigger_one_function() RETURNS TRIGGER AS $$
 BEGIN
-    DELETE FROM delivery_requests WHERE id = NEW.request_id;
+    IF NOT EXISTS (SELECT 1 FROM delivery_requests WHERE id = NEW.request_id) THEN
+        DELETE FROM delivery_requests WHERE id = NEW.request_id;
+    END IF;
     -- return value can be whatever
     RETURN NULL;
 END;
@@ -13,8 +15,8 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER trigger_one_check
 AFTER INSERT ON packages
 FOR EACH ROW
-WHEN (NOT EXISTS (SELECT 1 FROM delivery_requests WHERE id = NEW.request_id))
-EXECUTE FUNCTION trigger_one_function(NEW.request_id);
+EXECUTE FUNCTION trigger_one_function();
+
 
 
 -- checks the highest previous package id with the same request id
