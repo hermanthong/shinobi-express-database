@@ -2,29 +2,24 @@
 -- so it wouldn't make sense to check delivery requests when they're inserted
 -- since the check is done after a package is inserted, fresh delivery requests
 -- that the package's request id references should survive
-CREATE TRIGGER trigger_one_check
-AFTER INSERT ON packages
-FOR EACH ROW
-WHEN NOT EXISTS (SELECT 1 FROM delivery_requests WHERE id = NEW.request_id)
-EXECUTE FUNCTION trigger_one_function(NEW.request_id);
-
-CREATE OR REPLACE FUNCTION trigger_one_function(unreferenced_id INTEGER) RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION trigger_one_function() RETURNS TRIGGER AS $$
 BEGIN
-    DELETE FROM delivery_requests WHERE id = unreferenced_id;
+    DELETE FROM delivery_requests WHERE id = NEW.request_id;
     -- return value can be whatever
     RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER trigger_one_check
+AFTER INSERT ON packages
+FOR EACH ROW
+WHEN (NOT EXISTS (SELECT 1 FROM delivery_requests WHERE id = NEW.request_id))
+EXECUTE FUNCTION trigger_one_function(NEW.request_id);
+
 
 -- checks the highest previous package id with the same request id
 -- then checks if the new addition has a consecutive package id
 -- also includes edge case where table is empty
-CREATE TRIGGER trigger_two_check
-BEFORE INSERT ON packages
-FOR EACH ROW
-EXECUTE FUNCTION trigger_two_function();
-
 CREATE OR REPLACE FUNCTION trigger_two_function() RETURNS TRIGGER AS $$
 DECLARE
     last_id INTEGER;
@@ -42,13 +37,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER trigger_two_check
+BEFORE INSERT ON packages
+FOR EACH ROW
+EXECUTE FUNCTION trigger_two_function();
+
 -- trigger #3 is same as trigger #2
 -- trigger #4 selects the appropriate timestamp and prevents insertion of earlier timestamps
-CREATE TRIGGER trigger_three_and_four_check
-BEFORE INSERT ON unsuccessful_pickups
-FOR EACH ROW
-EXECUTE FUNCTION trigger_three_and_four_function();
-
 CREATE OR REPLACE FUNCTION trigger_three_and_four_function()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -79,14 +74,12 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
+CREATE TRIGGER trigger_three_and_four_check
+BEFORE INSERT ON unsuccessful_pickups
+FOR EACH ROW
+EXECUTE FUNCTION trigger_three_and_four_function();
 
 -- same as trigger #2
-CREATE TRIGGER legs_one_two_and_three_check
-BEFORE INSERT ON legs
-FOR EACH ROW
-EXECUTE FUNCTION legs_one_two_and_three_function();
-
 CREATE OR REPLACE FUNCTION legs_one_two_and_three_function() RETURNS TRIGGER AS $$
 DECLARE
     last_id INTEGER;
@@ -120,18 +113,16 @@ BEGIN
         IF previous_leg_end_timestamp IS NULL THEN
             RAISE EXCEPTION 'Previous leg has not been completed';
         ELSIF NEW.start_time < previous_leg_end_timestamp THEN
-            RAISE EXCEPTION "New timestamp should not be earlier than previous leg's end timestamp";
+            RAISE EXCEPTION 'New timestamp should not be earlier than previous legs end timestamp';
         END IF;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER unsuccess_delivery_one_check
-BEFORE INSERT ON unsuccessful_deliveries
+CREATE TRIGGER legs_one_two_and_three_check
+BEFORE INSERT ON legs
 FOR EACH ROW
-EXECUTE FUNCTION unsuccess_delivery_one_function();
+EXECUTE FUNCTION legs_one_two_and_three_function();
 
 CREATE OR REPLACE FUNCTION unsuccess_delivery_one_function() RETURNS TRIGGER AS $$
 DECLARE
@@ -139,17 +130,15 @@ DECLARE
 BEGIN
     SELECT start_time INTO other_timestamp FROM legs WHERE leg_id = NEW.leg_id AND request_id = NEW.request_id;
     IF NEW.attempt_time <= other_timestamp THEN
-        RAISE EXCEPTION "New timestamp should not be earlier than leg's start time";
+        RAISE EXCEPTION 'New timestamp should not be earlier than legs start time';
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER unsuccess_delivery_two_check
+CREATE TRIGGER unsuccess_delivery_one_check
 BEFORE INSERT ON unsuccessful_deliveries
 FOR EACH ROW
-EXECUTE FUNCTION unsuccess_delivery_two_function();
+EXECUTE FUNCTION unsuccess_delivery_one_function();
 
 CREATE OR REPLACE FUNCTION unsuccess_delivery_two_function() RETURNS TRIGGER AS $$
 BEGIN
@@ -164,12 +153,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER cancel_one_check
-BEFORE INSERT ON cancelled_requests
+CREATE TRIGGER unsuccess_delivery_two_check
+BEFORE INSERT ON unsuccessful_deliveries
 FOR EACH ROW
-EXECUTE FUNCTION cancel_one_function();
+EXECUTE FUNCTION unsuccess_delivery_two_function();
 
 CREATE OR REPLACE FUNCTION cancel_one_function() RETURNS TRIGGER AS $$
 DECLARE
@@ -177,17 +164,15 @@ DECLARE
 BEGIN
     SELECT submission_time INTO other_timestamp FROM delivery_requests WHERE id = NEW.id;
     IF NEW.cancel_time <= other_timestamp THEN
-        RAISE EXCEPTION "Cancel timestamp should not be earlier than request's submission time";
+        RAISE EXCEPTION 'Cancel timestamp should not be earlier than request submission time';
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER return_leg_one_check
-BEFORE INSERT ON return_legs
+CREATE TRIGGER cancel_one_check
+BEFORE INSERT ON cancelled_requests
 FOR EACH ROW
-EXECUTE FUNCTION return_leg_one_function();
+EXECUTE FUNCTION cancel_one_function();
 
 CREATE OR REPLACE FUNCTION return_leg_one_function() RETURNS TRIGGER AS $$
 DECLARE
@@ -205,12 +190,10 @@ BEGIN
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER return_leg_two_check
+CREATE TRIGGER return_leg_one_check
 BEFORE INSERT ON return_legs
 FOR EACH ROW
-EXECUTE FUNCTION return_leg_two_function();
+EXECUTE FUNCTION return_leg_one_function();
 
 CREATE OR REPLACE FUNCTION return_leg_two_function() RETURNS TRIGGER AS $$
 DECLARE
@@ -230,24 +213,22 @@ BEGIN
     SELECT MAX(leg_id) INTO last_leg_id FROM legs WHERE request_id = NEW.request_id;
     SELECT end_time INTO other_timestamp FROM legs WHERE leg_id = last_leg_id AND request_id = NEW.request_id;
     IF NEW.start_time < other_timestamp THEN
-        RAISE EXCEPTION "Return leg's start time should not be earlier than end time of latest leg";
+        RAISE EXCEPTION 'Return leg start time should not be earlier than end time of latest leg';
     END IF;
     -- part iii
     SELECT cancel_time INTO cancel_timestamp FROM cancelled_requests WHERE id = NEW.request_id;
     IF cancel_timestamp IS NOT NULL THEN
         IF NEW.start_time <= cancel_timestamp THEN
-            RAISE EXCEPTION "Return leg's start time should not be earlier than cancel time of cancelled request";
+            RAISE EXCEPTION 'Return leg start time should not be earlier than cancel time of cancelled request';
         END IF;
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER return_leg_three_check
-BEFORE INSERT ON unsuccessful_return_deliveries
+CREATE TRIGGER return_leg_two_check
+BEFORE INSERT ON return_legs
 FOR EACH ROW
-EXECUTE FUNCTION return_leg_three_function();
+EXECUTE FUNCTION return_leg_two_function();
 
 CREATE OR REPLACE FUNCTION return_leg_three_function() RETURNS TRIGGER AS $$
 BEGIN
@@ -262,12 +243,10 @@ BEGIN
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
-
-CREATE TRIGGER unsuccess_return_one_check
+CREATE TRIGGER return_leg_three_check
 BEFORE INSERT ON unsuccessful_return_deliveries
 FOR EACH ROW
-EXECUTE FUNCTION unsuccess_return_function();
+EXECUTE FUNCTION return_leg_three_function();
 
 CREATE OR REPLACE FUNCTION unsuccess_return_function() RETURNS TRIGGER AS $$
 DECLARE
@@ -276,12 +255,15 @@ BEGIN
     -- return leg is not a leg
     SELECT start_time INTO other_timestamp FROM return_legs WHERE leg_id = NEW.leg_id AND request_id = NEW.request_id;
     IF NEW.attempt_time <= other_timestamp THEN
-        RAISE EXCEPTION "Return attempt timestamp should not be earlier than start of return leg";
+        RAISE EXCEPTION 'Return attempt timestamp should not be earlier than start of return leg';
     END IF;
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
-
+CREATE TRIGGER unsuccess_return_one_check
+BEFORE INSERT ON unsuccessful_return_deliveries
+FOR EACH ROW
+EXECUTE FUNCTION unsuccess_return_function();
 
 -- 2.1.1
 -- The procedure submit_request takes input parameters like customer_id, evaluator_id, pickup_addr, pickup_postal, etc. as mentioned in the problem statement.
